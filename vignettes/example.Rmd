@@ -1,0 +1,70 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(composr)
+library(dplyr)
+df<-data.frame(a_variable=sample(letters,100,T),
+               another_variable=runif(100),
+               some_numbers=1:100,
+               select_multiple_var = sapply(1:100,function(x){
+                 sample(LETTERS[1:10],round(runif(1,min = 1,max = 10)),T) %>% paste(collapse=" ")
+                 }))
+df<-lapply(df,function(x){x[sample(1:length(x), 10)]<-NA; x}) %>% as_tibble
+
+df_with_recoding <- df %>%
+  new_recoding(source = "a_variable","alphabet_groups") %>%
+  recode_to("A-F",where.selected.any = c("a", "b", "c", "d", "e", "f"),otherwise.to = "G-Z")
+  
+  compose_select_multiple_any("a_variable",from=letters[1:24],to="7",otherwise = "X") 
+
+df_with_composite <- df_with_composite %>% new_composition(composition_name = "is_cv1_7") %>%
+    
+  compose_select_multiple_any(variable = "my_composite_variable",from = "7",to = TRUE) %>%
+  compose_default("a_variable")
+  compose_select_multiple_any(variable = "my_composite_variable",from = "2",to = FALSE) %>% 
+  new_composition("chained_composition") %>% 
+  compose_select_multiple_any(variable="is_cv1_7",from=TRUE, to = FALSE)
+
+
+
+
+
+print(df_with_composite)
+
+
+df %>% new_composition("mynewcomp")
+
+
+
+
+```
+
+
+```{r}
+library(dplyr)
+
+
+
+
+
+
+
+
+
+```
