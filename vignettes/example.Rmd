@@ -334,7 +334,7 @@ df %>% new_composition(target = "cross_var_recoding") %>%
 # Making weighted Sums
 
 
-This whole thing is quite nice for making weighted sums. For this we will recode variables to numeric, and then use `dplyr::mutate()` to sum them up (no worries, this is really easy!) Let' say we need a weighted sum between  `select_one_letters` and `select_mutiple_letters`.
+This whole thing is quite nice for making weighted sums. For this we will recode variables to numeric, and then use `dplyr::mutate()` to sum them up (no worries, there is almost nothing new compared to abve!) Let' say we need a weighted sum between  `select_one_letters` and `select_mutiple_letters`.
 
 - In the `select_one_letters`: 
   - the first 10 letters weight `1`
@@ -351,15 +351,24 @@ Here's how we do it:
 ```{r}
 
 df %>%
-  new_recoding("select_one_letters","select_one_weights") %>% # first recoding to weights
-  recode_to(1,where.selected.any = letters[1:10], otherwise.to = 2) %>% 
-  
-  new_recoding("select_multiple_letters","select_multiple_weights") %>%  # second recoding to weights
+  # first recoding to weights
+  new_recoding(source = "select_one_letters",
+               target = "select_one_weights") %>% 
+  recode_to(1,where.selected.any = letters[1:10], otherwise.to = 2) %>%
+  # end the first recoding
+  end_recoding() %>% 
+
+  # second recoding to weights
+  new_recoding("select_multiple_letters","select_multiple_weights") %>%  
   recode_to(0,where.selected.none = LETTERS) %>% 
   recode_to(1,where.selected.any = LETTERS) %>% 
   recode_to(2,where.selected.any = LETTERS[1:10]) %>% 
   recode_to(3, where.selected.any = "A") %>%  
+  
+  # end the second recoding
   end_recoding() %>% 
+  
+  # sum the two together!
   mutate(total_score = select_one_weights + select_multiple_weights)
 
 
