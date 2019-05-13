@@ -185,39 +185,40 @@ compose_generic<-function(.data,source,from=NULL,to=NULL,recoder,recoding_name,o
   # if there is no questionnaire, then skipped can only be treated like NAs:
 
 
-  if(is.null(questionnaire)){
-    if(!(skipped.to %in% na.to)){
-      stop("To treat skipped questions different from NAs, you must supply a questionnaire. (see ?koboquest::load_questionnaire)")
-    }
-  }
+
+
+
   # apply recoder to source variable
   x<-as.character(.data[[source]])
   x_recoded<-recoder(x, from, to, ...)
 
 
+  # where do the special cases apply?
+
+  # apply skiplogic:
+  if(is.null(questionnaire)){
+    if(!(skipped.to %in% na.to)){
+      if(!is.na(skipped.to)){
+        stop("To treat skipped questions different from NAs, you must supply a questionnaire. (see ?koboquest::load_questionnaire)")
+      }
+    }
+  }
+
+  if(!is.na(skipped.to) & !is.null(questionnaire)){
+    is_skipped <- questionnaire$question_is_skipped(.data, source)
+  }else{
+    is_skipped<-rep(FALSE, nrow(.data))
+  }
+
+  # otherwise and NA:
+
   is_to <- !is.na(x_recoded)
-  is_na <- is.na(x) & is.na(x_recoded)
-  is_otherwise<-!is_to & !is_na
+  is_na <- is.na(x) & is.na(x_recoded) & !is_skipped
+  is_otherwise<-!is_to & !is_na & !is_skipped
 
   x_recoded[is_na] <- na.to
   x_recoded[is_otherwise]<-otherwise.to
-
-
-  if(!is.null(otherwise.to)){
-    assertthat::assert_that(assertthat::is.scalar(otherwise.to),msg = "'otherwise' takes only a single value")
-    x_recoded[is_otherwise]<-otherwise.to
-    }
-
-
-
-
-
-
-
-
-
-
-
+  x_recoded[is_skipped]<-skipped.to
 
   # add to composition sequence
   attributes(.data)$sequence[,ncol(attributes(.data)$sequence)+1]<-(x_recoded)

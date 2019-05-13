@@ -86,6 +86,7 @@ recode_to<-function(.data,to,
 #' turn active recoding back into a simple data frame
 #' @param .data the recoding (see ?new_recoding)
 #' @return the data as a regular data.frame (tibble), with the new recoded variable added. All meta information on the recoding process is discarded.
+#' @export
 end_recoding<-function(.data){
   end_composition(.data)
 

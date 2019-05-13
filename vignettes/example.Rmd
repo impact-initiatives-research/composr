@@ -1,10 +1,10 @@
 ---
-title: "Vignette Title"
+title: "Recoding and composing with composr"
 author: "Vignette Author"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Recoding and composing with composr}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
   comment = "#>",echo = TRUE
     
 )
+
 ```
 
 ```{r, include=F}
@@ -29,49 +30,42 @@ df<-data.frame(select_one_letters=sample(letters,500,T),
 df<-lapply(df,function(x){x[sample(1:length(x), 100)]<-NA; x}) %>% as_tibble
 ```
 
-# Test data
+## Test data
 
-For illustration, here's a simple test data frame:
+For illustration we'll use this simple test data frame:
 
-```{r}
+```{r,eval=F}
 df
 
 ```
 
+```{r,echo=F}
+knitr::kable(head(df))
+
+```
+
+
 # Recoding
 
 
+### Starting a new recoding
 First, you start a recoding, and name the source and the target variable (the source variable must exist in the dataset, and the target variable must _not_ yet exist in the data set).
-Recoding then happens through consecutive conditions. For each condition, you supply a value to be used if the condition is fulfilled.
-If more than one condition is fulfilled for the same data row / value in the source variable, the value for the last condition that was added is used. Rows for which no condition is fullfilled default to `NA`.
 
-A simple example with numbers. We start a new recoding, specifying the source and target variables:
-```{r,results='hold'}
+```{r}
 
 df %>%
   new_recoding(source = "some_numbers",
-               target = "positive_or_negative") 
+               target = "number_size") 
 
 
 ```
 
-This already creates the new variable.
+This already creates the new variable; the new variable is filled with all NAs by default. Recoding then happens through consecutive conditions. For each condition, you supply a value to be used if the condition is fulfilled. Rows for which no condition is fullfilled default to `NA`.
+
+### Adding a chain of recoding conditions
 
 
-```{r,results='asis'}
-
- 
-df_with_recoded_var <- df %>%
-  
-  new_recoding(source = "some_numbers",
-               target = "positive_or_negative") %>% 
-  
-  recode_to("positive",
-            where.num.larger = 0) 
-
-(function(){cat("HALLO")})()
-df_with_recoded_var
-```
+A simple example with numbers. We start a new recoding, specifying the source and target variables. Then we apply a condition that recodes all numbers larger than 10 to "big number":
 
 
 ```{r}
@@ -79,7 +73,23 @@ df_with_recoded_var
 df %>%
   
   new_recoding(source = "some_numbers",
-               target = "larger_10") %>% 
+               target = "number_size") %>% 
+    recode_to("big number",
+            where.num.larger = 10)
+
+
+
+```
+
+Again, everything that does not fulfill the condition remains NA, but everything that was >10 in the source variable ("some_numbers") is now set to "big number" in the target variable. The source variable remains unchanged (always!). Let's add a second condition:
+
+
+```{r}
+
+df %>%
+  
+  new_recoding(source = "some_numbers",
+               target = "number_size") %>% 
   
   recode_to("big number",
             where.num.larger = 10) %>% 
@@ -91,31 +101,275 @@ df %>%
 
 ```
 
-<!-- df_with_recoding <- df %>% -->
-<!--   new_recoding(source = "select_multiple_var","alphabet_groups") %>% -->
-<!--   # recode_to("contains A-F",where.selected.any = c("A", "B", "C", "D", "E", "F"),otherwise.to = "no A-F at all") %>%  -->
-<!--   recode_to("a single Q and nothing else!",where.selected.exactly = "Q")  -->
+Tadaaa!
 
-<!-- # %>%  -->
-<!--   # recode_to("final letters present",where.selected.all = c("Y","Z")) -->
+### Ending a recoding
 
-<!--   compose_select_multiple_any("a_variable",from=letters[1:24],to="7",otherwise = "X")  -->
+Once we're done, we add `end_recoding()` to the chain. This gives us back the complete original data, with the newly recoded variable added in the end:
 
-<!-- df_with_composite <- df_with_composite %>% new_composition(composition_name = "is_cv1_7") %>% -->
+```{r}
 
-<!--   compose_select_multiple_any(variable = "my_composite_variable",from = "7",to = TRUE) %>% -->
-<!--   compose_default("a_variable") -->
-<!--   compose_select_multiple_any(variable = "my_composite_variable",from = "2",to = FALSE) %>%  -->
-<!--   new_composition("chained_composition") %>%  -->
-<!--   compose_select_multiple_any(variable="is_cv1_7",from=TRUE, to = FALSE) -->
-
-
-
-
-
-<!-- print(df_with_composite) -->
+df %>%
+  
+  new_recoding(source = "some_numbers",
+               target = "number_size") %>% 
+  
+  recode_to("big number",
+            where.num.larger = 10) %>% 
+  
+  
+  recode_to("small number",
+            where.num.smaller.equal = 10) %>% 
+  
+  end_recoding()
 
 
-<!-- df %>% new_composition("mynewcomp") -->
+```
+
+
+
+### Special cases: "otherwise"", "skipped" and `NA`
+
+In addition to a condition parameter ("where..."), extra values can be supplied for various cases where the condition is not fulfilled:
+
+- `na.to = `: NAs in the source variable are set to the value supplied to this parameter
+- `skipped.to = `: values that are `NA` in the source variable because the question was skipped in the kobo questionnaire are set to the value supplied to this parameter
+- `otherwise.to = `: values that are not NA in the source variable and do not fulfill the condition are set to the value supplied to this parameter
+
+we can for example use `otherwise.to` to shortcut the example above, and add a special value for `NA`s using `na.to`:
+
+
+```{r}
+df %>%
+  
+  new_recoding(source = "some_numbers",
+               target = "number_size") %>% 
+  
+  recode_to("big number",
+            where.num.larger = 10,
+            otherwise.to = "small number",
+            na.to = "COULD BE ANYTHING!") %>% 
+  
+  end_recoding()
+
+
+```
+
+More details on `skipped.to` in it's own chapter further below: "Recoding Skiplogic with koboquest"
+
+
+### The Order Mattres! 
+
+What is important to remember is that the _order_ of the conditions is important; if more than one condition applies, the last one counts:
+
+```{r}
+
+df %>%
+  
+  new_recoding("some_numbers", "number_size") %>% 
+  
+  recode_to("gigantic",where.num.larger.equal = 15) %>% 
+  recode_to("large", where.num.smaller = 15) %>% 
+  recode_to("medium", where.num.smaller = 10) %>% 
+  recode_to("small", where.num.smaller = 5) %>% 
+  recode_to("tiny", where.num.smaller = 2) %>% 
+  
+  end_recoding()
+
+
+
+```
+Here, first _all_ numbers smaller than 15 are set to "large" - including very small numbers. However for smaller numbers, that condition is then overwritten.
+
+### "where..." Conditions
+
+
+For simple numbers this seems a bit tedious; however there are quite a few "where..." conditions for numbers ("where.num...") and for categorical select_one or select_multiple ("where.selected") questions that come in handy:
+
+- **for categorical source variables:**
+    - `where.selected.any` supply a single value or a vector. If a response contains _any_ of the supplied values, the condition applies. 
+    - `where.selected.all` supply a single value or a vector. If a response contains _all_ of the supplied values, the condition applies.
+    - `where.selected.exactly` supply a single value or a vector. If a response contains _exactly_ all of the supplied values and no other values, the condition applies.
+    - `where.selected.none` supply a single value or a vector. If a response contains _none_ of the supplied values, the condition applies.
+- **for numerical source variables:**
+    - `where.num.equal` the condition applies if the number is ... exactly the supplied value
+    - `where.num.smaller` ...smaller than the supplied value
+    - `where.num.smaller.equal` ... smaller or equal to the supplied value
+    - `where.num.larger` ... larger 
+    - `where.num.larger.equal`... larger or equal
+
+
+Here an example with a categorical variable with multiple responses (this package assumes that responses are separated with a single space " "):
+```{r}
+
+df %>% 
+  
+  new_recoding("select_multiple_letters", "letter_combos") %>% 
+  
+  recode_to("at least one of A, B and C",
+            where.selected.any = c("A","B","C")) %>% 
+  
+  recode_to("all of A, B and C",
+            where.selected.all = c("A","B","C")) %>% 
+  
+  recode_to("none from A, B or C selected",
+            where.selected.none = c("A","B","C")) %>% 
+  
+  recode_to("exactly A, B and C (and nothing else) selected",
+            where.selected.exactly = c("A","B")) %>% 
+  
+  end_recoding()
+
+```
+
+
+### Recoding Skiplogic with koboquest
+
+
+In order to use `skipped.to` (recoding values that were skipped in the questionnaire), you need to be familiar with the `koboquest` package.
+Then you can use it to load the questionnaire, and pass it to `recode_to`.
+
+Here is an example, for which we create a fake kobo questionaire. In the fake questionnaire, we defined that  all `select_one_letters` are skipped wherever `some_numbers` is larger than three. Here's our tiny example questionnaire:
+
+
+
+```{r,include = F}
+# creating a "fake" kobo questionnaire:
+select_one_lower_letters_relevant <- 
+  "( ${some_numbers} < 3 )"
+
+questions<-data.frame(name = c("select_one_letters", "some_numbers", "select_multiple_letters"),
+                      type = c("select_one lower_letters","integer","select_multiple upper_letters"),
+                      relevant=c(select_one_lower_letters_relevant,"",""),stringsAsFactors = F)
+
+
+
+choices<-data.frame("list_name" = rep("lower_letters",length(letters)),
+                    name=letters, label = paste("letter:",letters))
+```
+
+```{r,eval=F}
+questions
+```
+
+
+```{r,echo=F}
+knitr::kable(questions)
+```
+
+```{r,eval=F}
+choices
+```
+
+
+```{r,echo=F}
+knitr::kable(head(choices))
+```
+
+
+
+
+We can load the questinonaire `koboquest` style:
+
+```{r,warning=F,message=F}
+my_questionnaire <- koboquest::load_questionnaire(data = df,
+                              questions = questions,
+                              choices = choices)
+
+```
+
+Then we pass it to the `recode_to` function and use it to recode skipped values to a special value:
+
+```{r}
+
+
+df %>% new_recoding("select_one_letters","new_variable") %>% 
+  recode_to("first half of alphabet",
+            where.selected.any = letters[1:13],
+            otherwise.to = "second half of alphabet",
+            skipped.to = "this one was skipped",
+            questionnaire = my_questionnaire)
+
+
+```
+
+
+### End the recoding
+
+As you may have noticed, the recoding tracks what conditions are applied when and how often each comes into effect (printed to the console when you print the resulting data frame.). You can get rid of that in the end with `end_recoding()`.
+
+```{r}
+df %>% new_recoding("select_one_letters", "is_B") %>% 
+  recode_to(TRUE, where.selected.exactly = "b",
+            otherwise.to = FALSE) %>% 
+  end_recoding()
+
+```
+
+
+
+
+# Composing
+
+"Composing" works **100% exactly like recoding**, with the only difference that composing allows you to use _multiple source variables_. This means that you have to specify the source variable each time. We made the "less powerful" recoding functions because "composing" isn't usually needed, can be confusing and has some default behaviour that may not be intuitive. Unless you're sure of what you're up to, it's better to stick to "recoding".
+
+But anyway, here it goes: recoding from multiple source variables = composing. Notice how the "source" is no longer defined in `new_...()` but in the composition layers:
+
+```{r}
+df %>% new_composition(target = "cross_var_recoding") %>% 
+  compose(source = "select_one_letters",
+          to = "select one letters in A B C D",
+          where.selected.any = c("a","b","c","d")) %>% 
+  compose(source = "some_numbers",
+          to = "but when the number is larger 10, it's different",
+          where.num.larger = 10) %>% 
+  compose(source = "select_multiple_letters",
+          to = "who's confused now?",
+          where.selected.any = LETTERS[1:3]) %>% 
+  end_composition()
+
+```
+
+
+# Making weighted Sums
+
+
+This whole thing is quite nice for making weighted sums. For this we will recode variables to numeric, and then use `dplyr::mutate()` to sum them up (no worries, this is really easy!) Let' say we need a weighted sum between  `select_one_letters` and `select_mutiple_letters`.
+
+- In the `select_one_letters`: 
+  - the first 10 letters weight `1`
+  - the others weight `2`
+
+- in `select_multipe_letters`
+  - having ticked nothing weighs 0
+  - selecting any weights `1`
+  - selecting at least some from the fist 10 letters is a `2`
+  - but when "A"" was ticked, it weighs 3 regardless of the other choices. 
+
+Here's how we do it:
+
+```{r}
+
+df %>%
+  new_recoding("select_one_letters","select_one_weights") %>% # first recoding to weights
+  recode_to(1,where.selected.any = letters[1:10], otherwise.to = 2) %>% 
+  
+  new_recoding("select_multiple_letters","select_multiple_weights") %>%  # second recoding to weights
+  recode_to(0,where.selected.none = LETTERS) %>% 
+  recode_to(1,where.selected.any = LETTERS) %>% 
+  recode_to(2,where.selected.any = LETTERS[1:10]) %>% 
+  recode_to(3, where.selected.any = "A") %>%  
+  end_recoding() %>% 
+  mutate(total_score = select_one_weights + select_multiple_weights)
+
+
+
+
+```
+
+
+TADAAA!
+
+<img src="applause.gif">
 
 
