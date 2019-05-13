@@ -67,7 +67,7 @@ set_to<-function(.data,value,otherwise.to = NA,na.to = NA,skipped.to = NA){
   vec[is_value]<-value
   vec[is_na] <- na.to
   vec[is_otherwise]<-otherwise.to
-  tibble(vec)
+  tibble::tibble(vec)
 }
 
 

@@ -13,10 +13,10 @@ make_numeric_recoder<-function(recode_where){
     if(is.null(from)){stop("'from' and 'where...' parameters must not be NULL")}
     if(any(is.na(from))){stop("'from' and 'where...' parameters must not be NA")}
 
-    from <- from %>% as.numeric
+    from <- from %>% as.character %>% as.numeric
     if(is.na(from)){stop("'from' / where.num... parameter could not be interpreted as a number")}
 
-    x <- as.numeric(x)
+    x <- as.numeric(as.character(x))
 
     x_recoded <- rep(NA, length(x))
     to_recode <- recode_where(x,from)

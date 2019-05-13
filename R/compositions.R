@@ -238,7 +238,7 @@ compose_generic<-function(.data,source,from=NULL,to=NULL,recoder,recoding_name,o
 #' @return data.frame with the newly composed variable(s)
 #' @export
 end_composition<-function(.data){
-  as_tibble(.data)
+  tibble::as_tibble(.data)
 }
 
 

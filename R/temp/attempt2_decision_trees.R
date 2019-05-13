@@ -23,7 +23,7 @@ df<-data.frame(a=sample(letters[1:5],100,T),b=sample(letters[4:10],100,T),c=samp
 
 
 # branch<-function(.branch,x){c(.branch,x)}
-df<-tibble(var1=rep(c("A","B","C"),4),var2 = rep(c("A","B"),6),var3 = rep(c("A","B","C","D"),3))
+df<-tibble::tibble(var1=rep(c("A","B","C"),4),var2 = rep(c("A","B"),6),var3 = rep(c("A","B","C","D"),3))
 
 tree<-new_tree(df)
 (tree)
