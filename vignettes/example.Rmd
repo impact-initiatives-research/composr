@@ -19,17 +19,19 @@ knitr::opts_chunk$set(
 ```{r}
 library(composr)
 library(dplyr)
-df<-data.frame(a_variable=sample(letters,100,T),
-               another_variable=runif(100),
-               some_numbers=1:100,
-               select_multiple_var = sapply(1:100,function(x){
-                 sample(LETTERS[1:10],round(runif(1,min = 1,max = 10)),T) %>% paste(collapse=" ")
+df<-data.frame(a_variable=sample(letters,500,T),
+               another_variable=runif(500),
+               some_numbers=1:500,
+               select_multiple_var = sapply(1:500,function(x){
+                 sample(LETTERS,round(runif(1,min = 1,max = 10)),T) %>% paste(collapse=" ")
                  }))
 df<-lapply(df,function(x){x[sample(1:length(x), 10)]<-NA; x}) %>% as_tibble
 
 df_with_recoding <- df %>%
-  new_recoding(source = "a_variable","alphabet_groups") %>%
-  recode_to("A-F",where.selected.any = c("a", "b", "c", "d", "e", "f"),otherwise.to = "G-Z")
+  new_recoding(source = "select_multiple_var","alphabet_groups") %>%
+  recode_to("contains A-F",where.selected.any = c("A", "B", "C", "D", "E", "F"),otherwise.to = "no A-F at all") %>% 
+  recode_to("a single Q and nothing else!",where.selected.exactly = "Q") %>% 
+  recode_to("final letters present",where.selected.all = c("Y","Z"))
   
   compose_select_multiple_any("a_variable",from=letters[1:24],to="7",otherwise = "X") 
 

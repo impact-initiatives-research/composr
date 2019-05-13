@@ -6,21 +6,19 @@ make_numeric_recoder<-function(recode_where){
 
     assertthat::assert_that(is.vector(x),msg = "x must be a vector")
     assertthat::assert_that(assertthat::is.scalar(to),msg = "'to' takes only a single value")
-    if(!is.null(otherwise)){assertthat::assert_that(assertthat::is.scalar(otherwise),msg = "'otherwise' takes only a single value")}
+    assertthat::assert_that(is.vector(x),msg = "x must be a vector")
+    assertthat::assert_that(assertthat::is.scalar(to),msg = "'to' takes only a single value")
+
+    if(!is.vector(from)){stop("'from' and 'where...' parameters must be a scalar or a vector" )}
+    if(is.null(from)){stop("'from' and 'where...' parameters must not be NULL")}
+    if(any(is.na(from))){stop("'from' and 'where...' parameters must not be NA")}
 
     from <- from %>% as.numeric
+    if(is.na(from)){stop("'from' / where.num... parameter could not be interpreted as a number")}
 
     x_recoded <- rep(NA, length(x))
 
     to_recode <- x %>% as.numeric %>% recode_where(as.numeric(from))
-
-
-    x_recoded[to_recode] <- to
-    if(!is.null(otherwise)){
-      x_recoded[!is.na(x) & !to_recode]<-otherwise
-    }
-
-    x_recoded[is.na(x)]<-NA
 
     x_recoded
   }

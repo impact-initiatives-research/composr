@@ -23,11 +23,11 @@ selected_none_lgl<-function(x,from){
 make_select_multiple_vectorized_recoder<-function(recode_where){
   assertthat::assert_that(class(recode_where)=="function",msg = "'single_response_recoder' must be a function")
 
-  function(x,from,to,otherwise=NULL){
+  function(x,from,to){
 
     assertthat::assert_that(is.vector(x),msg = "x must be a vector")
     assertthat::assert_that(assertthat::is.scalar(to),msg = "'to' takes only a single value")
-    if(!is.null(otherwise)){assertthat::assert_that(assertthat::is.scalar(otherwise),msg = "'otherwise' takes only a single value")}
+    if(!is.vector(from)){stop("'from' and 'where...' parameters must be a scalar or a vector" )}
 
     from <- from %>% strsplit(" ") %>% as.vector %>% unlist
 
@@ -38,13 +38,7 @@ make_select_multiple_vectorized_recoder<-function(recode_where){
     to_recode <- x %>% as.character %>% strsplit(" ") %>% lapply(function(x){
       recode_where(x,from)}) %>% unlist
 
-
     x_recoded[to_recode] <- to
-    if(!is.null(otherwise)){
-      x_recoded[!is.na(x) & !to_recode]<-otherwise
-    }
-
-    x_recoded[is.na(x)]<-NA
 
     x_recoded
   }

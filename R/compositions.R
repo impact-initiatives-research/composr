@@ -163,22 +163,61 @@ compose<-function(.data,source, to,
 compose_generic<-function(.data,source,from=NULL,to=NULL,recoder,recoding_name,otherwise.to = NA, skipped.to = NA, na.to = NA, questionnaire = NULL, ...){
 
   # catch bad input:
-  if(!("composr_composition" %in% class(.data))) {stop("compose_... function chains must start with 'new_composition()' (see ?composr)")}
-  if(source==attributes(.data)$target){stop("you can not compose from a variable to itself; maybe you need to start a `new_composition()` with a different `target` variable name?")}
-  if(!(source %in% names(.data))){stop(paste0("variable '",source,"' not found in dataset"))}
+  if(!("composr_composition" %in% class(.data))) {stop("compose_... function chains must start with 'new_composition()' or 'new_recoding()'")}
+  if(source==attributes(.data)$target){stop("you can not compose from a variable to itself; maybe you need to start a `new_composition()` or a 'new_recoding()' with a different `target` variable name?")}
+
+  assertthat::assert_that(assertthat::is.string(source),
+                          msg = '`source` must be a single quoted character string naming a variable name, for example:
+                          compose(.... , source = "my_column_name")')
+
+  if(!(source %in% names(.data))){stop(paste0("variable '",source,"' provided as `source` not found in dataset"))}
+
+  assertthat::assert_that(assertthat::is.scalar(to),
+                          msg = '`to` must be only a single value. (see ?compose, ?recode or browseVignettes("composr") for more details')
+
+  if(!is.vector(from)) {stop("'from' and where... inputs must be a scalar or a vector. (see ?compose, ?recode or browseVignettes('composr') for more details")}
+
   if(any(is.na(to))){stop("no NAs allowed in 'to' parameter.")}
   if(any(is.na(from))){stop("no NAs allowed in 'from' parameter. If the input data is missing, usually it doesn't make sense to turn that into values. To ignore this very sound advice, you can use the `na.to` parameter.")}
   if(!is.na(na.to)){warning("the na.to parameter is not recommended. Turning NA's / missing data into values is usually a bad idea. Please make 100% sure you're not creating data where really there is none..")}
 
+  if(length(to)!=1){"'to' must be a scalar (a single element)"}
   # if there is no questionnaire, then skipped can only be treated like NAs:
+
+
   if(is.null(questionnaire)){
-    if((skipped.to != na.to) | !(is.na(skipped.to & is.na(na.to)))){
+    if(!(skipped.to %in% na.to)){
       stop("To treat skipped questions different from NAs, you must supply a questionnaire. (see ?koboquest::load_questionnaire)")
     }
   }
   # apply recoder to source variable
   x<-as.character(.data[[source]])
-  x_recoded<-recoder(x,from,to,otherwise.to, na.to, skipped.to,...)
+  x_recoded<-recoder(x, from, to, ...)
+
+
+  is_to <- !is.na(x_recoded)
+  is_na <- is.na(x) & is.na(x_recoded)
+  is_otherwise<-!is_to & !is_na
+
+  x_recoded[is_na] <- na.to
+  x_recoded[is_otherwise]<-otherwise.to
+
+
+  if(!is.null(otherwise.to)){
+    assertthat::assert_that(assertthat::is.scalar(otherwise.to),msg = "'otherwise' takes only a single value")
+    x_recoded[is_otherwise]<-otherwise.to
+    }
+
+
+
+
+
+
+
+
+
+
+
 
   # add to composition sequence
   attributes(.data)$sequence[,ncol(attributes(.data)$sequence)+1]<-(x_recoded)
