@@ -2,7 +2,7 @@
 make_numeric_recoder<-function(recode_where){
   assertthat::assert_that(class(recode_where)=="function",msg = "'recode_where' must be a function")
 
-  function(x,from,to,otherwise=NULL){
+  function(x,from,to){
 
     assertthat::assert_that(is.vector(x),msg = "x must be a vector")
     assertthat::assert_that(assertthat::is.scalar(to),msg = "'to' takes only a single value")
@@ -16,9 +16,12 @@ make_numeric_recoder<-function(recode_where){
     from <- from %>% as.numeric
     if(is.na(from)){stop("'from' / where.num... parameter could not be interpreted as a number")}
 
-    x_recoded <- rep(NA, length(x))
+    x <- as.numeric(x)
 
-    to_recode <- x %>% as.numeric %>% recode_where(as.numeric(from))
+    x_recoded <- rep(NA, length(x))
+    to_recode <- recode_where(x,from)
+
+    x_recoded[to_recode] <- to
 
     x_recoded
   }

@@ -16,7 +16,7 @@ new_composition<-function(df,target){
 
   class(df)<-c("composr_composition",class(df)) %>% unique
   attributes(df)$target<-target
-  attributes(df)$recodings<-c("fill NA")
+  attributes(df)$recodings<-c("NA by default ")
   df[[target]]<-NA
   attributes(df)$sequence<-tibble::tibble(.rows = nrow(df))
   df

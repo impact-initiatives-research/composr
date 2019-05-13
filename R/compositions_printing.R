@@ -14,7 +14,8 @@ collapse_recoding_sequence<-function(sequence){
 
 
 
-
+#' @method print myClass
+#' @export
 print.composr_composition<-function(x){
 
   x_simple<-x

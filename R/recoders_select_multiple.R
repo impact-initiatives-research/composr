@@ -2,6 +2,7 @@
 
 selected_exactly_lgl<-function(x,from){
   if(length(x)!=length(from)){return(FALSE)}
+  if(any(is.na(x))){return(NA)}
   all(sort(as.character(x)) == sort(as.character(from)))
 }
 
