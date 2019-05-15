@@ -4,7 +4,7 @@
 \alias{new_recoding}
 \title{Start a new recoding}
 \usage{
-new_recoding(df, source, target)
+new_recoding(df, source = NULL, target)
 }
 \arguments{
 \item{df}{the source data as a data.frame}

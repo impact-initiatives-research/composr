@@ -13,7 +13,6 @@ collapse_recoding_sequence<-function(sequence){
 
 
 
-
 #' @method print composr_composition
 #' @export
 print.composr_composition<-function(x){
@@ -23,7 +22,8 @@ print.composr_composition<-function(x){
   attributes(x_simple)$recodings<-NULL
   class(x_simple)<-class(x_simple)[class(x_simple)!="composr_composition"]
   cat("\n")
-  print(x_simple)
+  cols_to_show<-c(attributes(x)$source,attributes(x)$target)
+  if(!is.null(cols_to_show)){print(x_simple %>% select(cols_to_show))}else{cat(crayon::silver,"(no source variable defined)")}
 
 
   condition_count<-count_which_condition_applied(attributes(x)$sequence)

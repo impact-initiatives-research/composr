@@ -67,8 +67,8 @@ First, you start a recoding, and name the source and the target variable (the so
 ```{r}
 
 df %>%
-  new_recoding(source = "some_numbers",
-               target = "number_size") 
+  new_recoding(source = some_numbers,
+               target = number_size) 
 
 
 ```
@@ -85,8 +85,8 @@ A simple example with numbers. We start a new recoding, specifying the source an
 
 df %>%
   
-  new_recoding(source = "some_numbers",
-               target = "number_size") %>% 
+  new_recoding(source = some_numbers,
+               target = number_size) %>% 
     recode_to("big number",
             where.num.larger = 10)
 
@@ -101,8 +101,8 @@ Again, everything that does not fulfill the condition remains NA, but everything
 
 df %>%
   
-  new_recoding(source = "some_numbers",
-               target = "number_size") %>% 
+  new_recoding(source = some_numbers,
+               target = number_size) %>% 
   
   recode_to("big number",
             where.num.larger = 10) %>% 
@@ -124,7 +124,7 @@ Once we're done, we add `end_recoding()` to the chain. This gives us back the co
 
 df %>%
   
-  new_recoding(source = "some_numbers",
+  new_recoding(source = some_numbers,
                target = "number_size") %>% 
   
   recode_to("big number",
@@ -155,8 +155,9 @@ we can for example use `otherwise.to` to shortcut the example above, and add a s
 ```{r}
 df %>%
   
-  new_recoding(source = "some_numbers",
-               target = "number_size") %>% 
+  new_recoding(target = "number_size",
+               source = some_numbers
+               ) %>% 
   
   recode_to("big number",
             where.num.larger = 10,
@@ -167,6 +168,9 @@ df %>%
 
 
 ```
+
+using `na.to` always throws a warning. It is assumed that`NA` is real missing data, so recoding that into some values may be a flaw in the methodology.
+
 
 More details on `skipped.to` in it's own chapter further below: "Recoding Skiplogic with koboquest"
 
@@ -179,7 +183,7 @@ What is important to remember is that the _order_ of the conditions is important
 
 df %>%
   
-  new_recoding("some_numbers", "number_size") %>% 
+  new_recoding(target = number_size, source = some_numbers) %>% 
   
   recode_to("gigantic",where.num.larger.equal = 15) %>% 
   recode_to("large", where.num.smaller = 15) %>% 
@@ -217,7 +221,8 @@ Here an example with a categorical variable with multiple responses (this packag
 
 df %>% 
   
-  new_recoding("select_multiple_letters", "letter_combos") %>% 
+  new_recoding(target = letter_combos,
+               source = select_multiple_letters) %>% 
   
   recode_to("at least one of A, B and C",
             where.selected.any = c("A","B","C")) %>% 
@@ -296,7 +301,9 @@ Then we pass it to the `recode_to` function and use it to recode skipped values 
 ```{r}
 
 
-df %>% new_recoding("select_one_letters","new_variable") %>% 
+df %>% new_recoding(target = new_variable,
+                    source = select_one_letters) %>%
+  
   recode_to("first half of alphabet",
             where.selected.any = letters[1:13],
             otherwise.to = "second half of alphabet",
@@ -312,7 +319,7 @@ df %>% new_recoding("select_one_letters","new_variable") %>%
 As you may have noticed, the recoding tracks what conditions are applied when and how often each comes into effect (printed to the console when you print the resulting data frame.). You can get rid of that in the end with `end_recoding()`.
 
 ```{r}
-df %>% new_recoding("select_one_letters", "is_B") %>% 
+df %>% new_recoding(target = is_B, source = select_one_letters) %>% 
   recode_to(TRUE, where.selected.exactly = "b",
             otherwise.to = FALSE) %>% 
   end_recoding()
@@ -322,32 +329,73 @@ df %>% new_recoding("select_one_letters", "is_B") %>%
 
 
 
-# Composing
+# Changing the Source Variable
 
-"Composing" works **100% exactly like recoding**, with the only difference that composing allows you to use _multiple source variables_. This means that you have to specify the source variable each time. We made the "less powerful" recoding functions because "composing" isn't usually needed, can be confusing and has some default behaviour that may not be intuitive. Unless you're sure of what you're up to, it's better to stick to "recoding".
-
-But anyway, here it goes: recoding from multiple source variables = composing. Notice how the "source" is no longer defined in `new_...()` but in the composition layers:
+It is also possible to change the source variable during recoding. The target variable stays the same:
 
 ```{r}
-df %>% new_composition(target = "cross_var_recoding") %>% 
-  compose(source = "select_one_letters",
-          to = "select one letters in A B C D",
-          where.selected.any = c("a","b","c","d")) %>% 
-  compose(source = "some_numbers",
-          to = "but when the number is larger 10, it's different",
-          where.num.larger = 10) %>% 
-  compose(source = "select_multiple_letters",
-          to = "who's confused now?",
-          where.selected.any = LETTERS[1:3]) %>% 
-  end_composition()
+
+df %>% new_recoding(target = cross_var_recoding,
+                    source = select_multiple_letters
+                    ) %>%
+
+  recode_to(to = "select one of the first 15 letters in the alphabet",
+          where.selected.any = LETTERS[1:15]) %>%
+
+  recode_to(to = "ignore the selected letters! this record has num > 15!",
+          where.num.larger = 15,
+          source = some_numbers) %>% 
+  
+  end_recoding()
 
 ```
+
+As above, any rows that match more than one condition will be set to the "to" parameter value, essentially ignoring any previous matches. The conditions are **not** 'added' like an "AND" operator (which would mean "set the value where _both_ conditions are fulfilled"). Instead, it always means "set the value of the _last_ condition that applies, independent from the previous conditions" 
+
+
+
+## Recoding complex conditions across source variables: "Free recoding""
+
+Apart from the quite strict (but hopefully easy to use) `recode_to()`, there is the generic "where" argument; here you need to specify an expression that evaluates to a logical (TRUE/FALSE) condition.
+Here you _only_ supply the input data, the "to" value you want to recode to and a generic `where` condition. The "where"" condition can be any R code that can run inside the namespace of the input data (hopefully clear to tidyverselers, and to everyone else with the example below):
+
+
+Let's say we want a recoding condition that says "turn all values where `select_one_letters` is in the first 12 letters of the alphabet, **AND** `some_numbers` < 15". We can specify that conditon in the simple "where" parameter as straight up R code:
+```{r}
+
+df %>% new_recoding(target = free_recoded_index) %>% recode_to(to="A-G and smaller than fifteen",
+            where = c(select_one_letters %in% letters[1:7]) & some_numbers < 15) %>% end_recoding()
+
+```
+
+
+### Extra functions for free recoding
+
+#### Skip logic
+
+If you pass the questionnaire, you can use `is_skipped()` inside the where condition:
+
+```{r}
+df %>%
+  
+  new_recoding(target = "new values for skipped") %>% 
+  recode_to("SKIPPED!",
+            where = is_skipped(select_one_letters) & !is.na(some_numbers),
+            questionnaire = my_questionnaire) %>% 
+  
+  end_recoding()
+
+
+```
+
+
+
 
 
 # Making weighted Sums
 
 
-This whole thing is quite nice for making weighted sums. For this we will recode variables to numeric, and then use `dplyr::mutate()` to sum them up (no worries, there is almost nothing new compared to abve!) Let' say we need a weighted sum between  `select_one_letters` and `select_mutiple_letters`.
+This whole thing works for making weighted sums. For this we will recode variables to numeric, and then use `dplyr::mutate()` to sum them up (no worries, there is almost nothing new compared to abve!) Let' say we need a weighted sum between  `select_one_letters` and `select_mutiple_letters`.
 
 - In the `select_one_letters`: 
   - the first 10 letters weight `1`
@@ -365,17 +413,26 @@ Here's how we do it:
 
 df %>%
   # first recoding to weights
-  new_recoding(source = "select_one_letters",
-               target = "select_one_weights") %>% 
-  recode_to(1,where.selected.any = letters[1:10], otherwise.to = 2) %>%
+  new_recoding(source = select_one_letters,
+               target = select_one_weights) %>% 
+  
+  recode_to(1,
+            where.selected.any = letters[1:10],
+            otherwise.to = 2) %>%
   # end the first recoding
   end_recoding() %>% 
 
   # second recoding to weights
-  new_recoding("select_multiple_letters","select_multiple_weights") %>%  
+  new_recoding(select_multiple_weights,
+               select_multiple_letters
+               ) %>%  
+  
   recode_to(0,where.selected.none = LETTERS) %>% 
+  
   recode_to(1,where.selected.any = LETTERS) %>% 
+  
   recode_to(2,where.selected.any = LETTERS[1:10]) %>% 
+  
   recode_to(3, where.selected.any = "A") %>%  
   
   # end the second recoding
@@ -388,10 +445,123 @@ df %>%
 
 
 ```
+You see here also that we can also create two variables by piping directly from a `end_recoding()` into a `new_recoding`. 
+
+
+
+
+
+
+
+# Making Decision Tree
+
+Alternatively, you can use this to form "decision tree" style severity scores. Here is an example:
+```{r}
+
+edges<-matrix(c(
+            "start",
+            "select_one_letters",
+            "",
+  
+            "select_one_letters",
+            "some_numbers",
+            "A, B, C or D", 
+            
+            "select_one_letters",
+            "final score: 5", 
+            "any from D - Z", 
+            
+            "some_numbers", 
+            "final score 4",
+            " < 10",
+            
+            "some_numbers",
+            "final score 3",
+            ">= 10"),ncol = 3L,byrow = T)
+
+g<- igraph:: graph_from_edgelist((edges)[,1:2],directed = T)
+igraph::E(g)$label <- edges[,3]
+igraph::V(g)$color<-"#AAAAAA"
+igraph::V(g)$color[grepl("final",igraph::V(g)$name)]<-"#FF0000"
+
+
+g %>% plot(
+  # vertex.color = "gray",
+  vertex.frame.color=NA,
+  vertex.label.color="black",
+  edge.label.color="black",
+  vertex.label.family = "sans-serif",
+  edge.label.family = "sans-serif",
+  vertex.label.cex = 0.8,
+  edge.label.cex = 0.8,layout = igraph::layout_as_tree,edge.distance=10)
+
+
+```
+How coud we implement this with `recode_to`?
+We need _one free recoding layer for each possible path from the starting point to each final score_.
+In this example there are three possible paths; each path needs to be recoded to a certain score:
+
+- ---> select_one_letters is in D-Z   ---> final score 5
+- ---> select_one_letters is in A,B,C  AND some_numbers **<** 10   ---> final score 4
+- ---> select_one_letters is in A,B,C  AND some_numbers **>= 10**   ---> final score 3
+
+In R code - thinking "inside the data frame" (where each column is now a variable) - the conditions would look like this:
+
+```{r,eval=F}
+select_one_letters %in% letters[4:26]
+select_one_letters %in% letters[1:3]) & some_numbers<10
+select_one_letters %in% letters[1:3]) & some_numbers>=10
+sm_selected(select_multiple_letters,any = LETTERS[1:1])
+```
+Although this code by itself does not run, we can use it as a recoding condition:
+
+Here they are translated into recodings:
+
+```{r}
+
+
+df %>% new_recoding(target = severity) %>% 
+  recode_to(to = 5,
+            where = select_one_letters %in% letters[4:26] ) %>% 
+  
+  recode_to(to = 4, 
+               where = (select_one_letters %in% letters[1:3]) & some_numbers<10) %>% 
+  
+  recode_to(3,
+               where = (select_one_letters %in% letters[1:3]) & some_numbers>=10) %>% 
+  recode_to(5,
+            where = sm_selected(select_multiple_letters,any = LETTERS[1:1])) %>% 
+  end_recoding
+  
+
+
+```
+
+you can read this like a sentence: "take `df`, make a `new_recoding` with target `severity`. Then (%>%), `recode_to` `5` `where` `select_on_letters` is in the 4th - 26th letter of the alphabet. Then `recode_to` `4` where `select_one_letters` is in the first three letters of the alphabet, AND `some_numbers` is smaller then ten"...
+
+
+```{r}
+
+df %>% new_recoding(target = severity) %>% 
+  recode_to(5,
+            where = sm_selected(select_multiple_letters, any = c("A C","B"))) %>% 
+  end_recoding
+  
+
+```
+
+<div style="color:red;">not implemented yet: handling skiplogic in recode_freely</div>
 
 
 TADAAA!
 
 <img src="applause.gif">
+
+
+
+
+
+
+
 
 

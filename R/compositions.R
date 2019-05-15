@@ -6,7 +6,6 @@
 #' @return the input data frame with
 #'  - an additional column named after the value of `target`
 #'  - background setup to manage step by step composition of that variable from others.
-#' @export
 new_composition<-function(df,target){
 
   if(!is.data.frame(df)){stop("df must be a data.frame")}
@@ -48,7 +47,9 @@ new_composition<-function(df,target){
 #' end_composition()
 #'
 #' @export
-compose<-function(.data,source, to,
+compose<-function(.data,
+                  source,
+                  to,
                   where.selected.any = NULL,
                   where.selected.all = NULL,
                   where.selected.exactly = NULL,
@@ -58,6 +59,7 @@ compose<-function(.data,source, to,
                   where.num.smaller.equal = NULL,
                   where.num.larger = NULL,
                   where.num.larger.equal = NULL,
+                  where.string = NULL,
                   otherwise.to = NA,
                   skipped.to = NA,
                   na.to = NA,
@@ -65,8 +67,8 @@ compose<-function(.data,source, to,
 
 
 
-
-  if( (!(sapply(c(
+  # make sure only one type of "where" condition is used:
+  where_condition_passed<-!(sapply(list(
     where.selected.any,
     where.selected.all,
     where.selected.exactly,
@@ -75,7 +77,27 @@ compose<-function(.data,source, to,
     where.num.smaller,
     where.num.smaller.equal,
     where.num.larger,
-    where.num.larger.equal),is.null)) %>% which %>% length) !=1) { stop("provide exactly one of the 'where...' arguments.")}
+    where.num.larger.equal),is.null))
+
+  where_condition_passed <- c(where_condition_passed,where.string !="NULL")
+  if( ((where_condition_passed) %>% which %>% length) !=1) { stop("provide exactly one of the 'where...' arguments.")}
+
+
+  # if it's a free 'where' recoding, make it someone else's (= compose_freely) problem:
+  if(!where.string=="NULL"){
+    if(!all(sapply(list(otherwise.to, skipped.to,na.to),function(x){is.na(x)}))){
+      stop("you can not use \"otherswise.to\",\"skipped.to\",\"na.to\" together wih the generic \"where\" or \"where.string\" condition, because the generic 'where' doesn't have a specific source variable that these '...to' parameters would relate to.")
+    }
+    composition<- compose_freely(.data = .data,
+                                 to = to,
+                                 where.string = where.string,
+                                 questionnaire = questionnaire)
+    # if compose_freely was used, stop here:
+
+    return(composition)
+  }
+
+
 
 
   if(!is.null(where.selected.any)){
@@ -139,6 +161,7 @@ compose<-function(.data,source, to,
     recoding_name = paste0(source,": where num equal or larger:",paste(where.num.larger.equal))
 
   }
+
 
 
 
@@ -236,7 +259,6 @@ compose_generic<-function(.data,source,from=NULL,to=NULL,recoder,recoding_name,o
 #' @param .data the ongoing composition
 #' @details discards all composition meta information
 #' @return data.frame with the newly composed variable(s)
-#' @export
 end_composition<-function(.data){
   tibble::as_tibble(.data)
 }

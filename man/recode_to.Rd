@@ -9,23 +9,40 @@ recode_to(.data, to, where.selected.any = NULL,
   where.selected.none = NULL, where.num.equal = NULL,
   where.num.smaller = NULL, where.num.smaller.equal = NULL,
   where.num.larger = NULL, where.num.larger.equal = NULL,
-  otherwise.to = NA, skipped.to = NA, na.to = NA,
-  questionnaire = NULL)
+  where = NULL, otherwise.to = NA, skipped.to = NA, na.to = NA,
+  questionnaire = NULL, source = NULL)
 }
 \arguments{
 \item{.data}{the ongoing recoding obejct, see new_recoding()}
 
 \item{to}{the value to set the new composition to if the condition is fulfilled}
 
+\item{otherwise.to}{an alternative value to be used if the condition is not fulfilled, the source is not NA and not skipped}
+
+\item{skipped.to}{an alternative value to be used if the  source is NA because the question was skipped (requires to also supply the `questionnaire` parameter)}
+
+\item{na.to}{an alternative value to be used if the source is NA but not skipped (and the condition is was not fulfilled)}
+
 \item{where.selected..}{: a vector of choices; setting values to 'to' where in the source variable any/all/exactly/none of the supplied choices had been selected}
 
 \item{where.num...}{: a scalar number. setting values to 'to' where the 'source' is equal / smaller / smaller or equal / larger / larger or euqal than the number supplied in where.num...}
 
-\item{otherwise}{an alternative value to be used if the condition is not fulfilled, the source is not NA and not skipped}
+\item{change.source}{you can change the source variable used; this will _continue_ to recode to the same target variable, and will overwrite previously fulfilled conditions.}
 }
 \value{
-the updated composition
+the updated recoding
 }
 \description{
 add layer to current recoding
+}
+\examples{
+
+df<-data.frame(a=1:100,b=sample(letters[1:5],100,T))
+
+df \%>\% new_composition("new_variable_name") \%>\%
+compose("a",to = "less than 50" ,where.num.smaller = 50) \%>\%
+compose("a",to = "more or equal 50", where.num.larger.equal = 50)
+compose("b",to = "(size not important)",where.selected.exactly = "d") \%>\%
+end_composition()
+
 }

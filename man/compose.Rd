@@ -9,7 +9,7 @@ compose(.data, source, to, where.selected.any = NULL,
   where.selected.none = NULL, where.num.equal = NULL,
   where.num.smaller = NULL, where.num.smaller.equal = NULL,
   where.num.larger = NULL, where.num.larger.equal = NULL,
-  otherwise.to = NA, skipped.to = NA, na.to = NA,
+  where = NULL, otherwise.to = NA, skipped.to = NA, na.to = NA,
   questionnaire = NULL)
 }
 \arguments{
