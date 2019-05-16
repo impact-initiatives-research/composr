@@ -9,8 +9,8 @@ compose(.data, source, to, where.selected.any = NULL,
   where.selected.none = NULL, where.num.equal = NULL,
   where.num.smaller = NULL, where.num.smaller.equal = NULL,
   where.num.larger = NULL, where.num.larger.equal = NULL,
-  where = NULL, otherwise.to = NA, skipped.to = NA, na.to = NA,
-  questionnaire = NULL)
+  where.string = NULL, otherwise.to = NA, skipped.to = NA,
+  na.to = NA, questionnaire = NULL)
 }
 \arguments{
 \item{.data}{the composition, see new_composition()}

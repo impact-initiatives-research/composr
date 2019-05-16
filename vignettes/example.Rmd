@@ -2,7 +2,9 @@
 title: "Recoding and composing with composr"
 author: "Vignette Author"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Recoding and composing with composr}
   %\VignetteEngine{knitr::rmarkdown}
@@ -30,7 +32,10 @@ df<-data.frame(select_one_letters=sample(letters,500,T),
 df<-lapply(df,function(x){x[sample(1:length(x), 100)]<-NA; x}) %>% as_tibble
 ```
 
-## Test data
+
+# Preparation
+
+## example data
 
 For illustration we'll use this simple test data frame:
 
@@ -58,10 +63,11 @@ In this tutorial, we will also use the `dplyr` package, because it plays nicely 
 library(dplyr)
 ```
 
-# Recoding
+# Recoding: General structure
 
 
-### Starting a new recoding
+## Starting a new recoding
+
 First, you start a recoding, and name the source and the target variable (the source variable must exist in the dataset, and the target variable must _not_ yet exist in the data set).
 
 ```{r}
@@ -75,7 +81,7 @@ df %>%
 
 This already creates the new variable; the new variable is filled with all NAs by default. Recoding then happens through consecutive conditions. For each condition, you supply a value to be used if the condition is fulfilled. Rows for which no condition is fullfilled default to `NA`.
 
-### Adding a chain of recoding conditions
+## Adding a chain of recoding conditions
 
 
 A simple example with numbers. We start a new recoding, specifying the source and target variables. Then we apply a condition that recodes all numbers larger than 10 to "big number":
@@ -87,8 +93,8 @@ df %>%
   
   new_recoding(source = some_numbers,
                target = number_size) %>% 
-    recode_to("big number",
-            where.num.larger = 10)
+  
+  recode_to("big number", where.num.larger = 10)
 
 
 
@@ -116,7 +122,7 @@ df %>%
 
 Tadaaa!
 
-### Ending a recoding
+## Ending a recoding
 
 Once we're done, we add `end_recoding()` to the chain. This gives us back the complete original data, with the newly recoded variable added in the end:
 
@@ -141,7 +147,32 @@ df %>%
 
 
 
-### Special cases: "otherwise"", "skipped" and `NA`
+
+
+## The Order Mattres! 
+
+What is important to remember is that the _order_ of the conditions is important; if more than one condition applies, the last one counts:
+
+```{r}
+
+df %>%
+  
+  new_recoding(target = number_size, source = some_numbers) %>% 
+  
+  recode_to("gigantic",where.num.larger.equal = 15) %>% 
+  recode_to("large", where.num.smaller = 15) %>% 
+  recode_to("medium", where.num.smaller = 10) %>% 
+  recode_to("small", where.num.smaller = 5) %>% 
+  recode_to("tiny", where.num.smaller = 2) %>% 
+  
+  end_recoding()
+
+
+
+```
+Here, first _all_ numbers smaller than 15 are set to "large" - including very small numbers. However for smaller numbers, that condition is then overwritten.
+
+## Special cases: "otherwise"", "skipped" and `NA`
 
 In addition to a condition parameter ("where..."), extra values can be supplied for various cases where the condition is not fulfilled:
 
@@ -175,28 +206,7 @@ using `na.to` always throws a warning. It is assumed that`NA` is real missing da
 More details on `skipped.to` in it's own chapter further below: "Recoding Skiplogic with koboquest"
 
 
-### The Order Mattres! 
 
-What is important to remember is that the _order_ of the conditions is important; if more than one condition applies, the last one counts:
-
-```{r}
-
-df %>%
-  
-  new_recoding(target = number_size, source = some_numbers) %>% 
-  
-  recode_to("gigantic",where.num.larger.equal = 15) %>% 
-  recode_to("large", where.num.smaller = 15) %>% 
-  recode_to("medium", where.num.smaller = 10) %>% 
-  recode_to("small", where.num.smaller = 5) %>% 
-  recode_to("tiny", where.num.smaller = 2) %>% 
-  
-  end_recoding()
-
-
-
-```
-Here, first _all_ numbers smaller than 15 are set to "large" - including very small numbers. However for smaller numbers, that condition is then overwritten.
 
 ### "where..." Conditions
 
@@ -316,10 +326,10 @@ df %>% new_recoding(target = new_variable,
 
 ### End the recoding
 
-As you may have noticed, the recoding tracks what conditions are applied when and how often each comes into effect (printed to the console when you print the resulting data frame.). You can get rid of that in the end with `end_recoding()`.
+As you may have noticed, the recoding tracks what conditions are applied when and how often each comes into effect (printed to the console when you print the resulting data frame.). You can get rid of that and retreive the original dataset (with the new variable added) in the end with `end_recoding()`.
 
 ```{r}
-df %>% new_recoding(target = is_B, source = select_one_letters) %>% 
+df %>% new_recoding(target = is_b, source = select_one_letters) %>% 
   recode_to(TRUE, where.selected.exactly = "b",
             otherwise.to = FALSE) %>% 
   end_recoding()
@@ -357,7 +367,7 @@ As above, any rows that match more than one condition will be set to the "to" pa
 ## Recoding complex conditions across source variables: "Free recoding""
 
 Apart from the quite strict (but hopefully easy to use) `recode_to()`, there is the generic "where" argument; here you need to specify an expression that evaluates to a logical (TRUE/FALSE) condition.
-Here you _only_ supply the input data, the "to" value you want to recode to and a generic `where` condition. The "where"" condition can be any R code that can run inside the namespace of the input data (hopefully clear to tidyverselers, and to everyone else with the example below):
+Here you _only_ supply the input data, the "to" value you want to recode to and a generic `where` condition. The "where" condition can be any R code that can run inside the namespace of the input data; this means you can use data column names directly. (hopefully clear to tidyverselers, and to everyone else with the example below):
 
 
 Let's say we want a recoding condition that says "turn all values where `select_one_letters` is in the first 12 letters of the alphabet, **AND** `some_numbers` < 15". We can specify that conditon in the simple "where" parameter as straight up R code:
@@ -388,6 +398,57 @@ df %>%
 
 ```
 
+#### Select multiple questions
+
+responses to select multiple questions are stored as strings, with the different responses separated by a space; for example if someone selected "A", "B" and "C", the data will be "A B C". Therefore you can not simply say do `select_multiple_letters %in% c("A","B","C")` - this would never match. If you instead do `select_multiple_letters == "A B C"`, it would only match that exact combination in that exact order. So select multiple question are a bit more complicated.
+For this, we have an additional "helper" function that you can use inside the where condition: `sm_selected()` (short for "select_multiple" selected):
+
+Examples:
+```{r}
+a_select_multiple_vector<-c("A",
+                            "A B",
+                            "A B C ",
+                            "A B C D E",
+                            "X Y Z")
+
+
+# were any from A, B or C selected?
+sm_selected(a_select_multiple_vector,
+            any = c("A","B","C"))
+
+# were all from A, B or C selected?
+sm_selected(a_select_multiple_vector,
+            all = c("A","B","C"))
+
+# were exactly  A, B and C selected?
+sm_selected(a_select_multiple_vector,
+            exactly  = c("A","B","C"))
+
+
+# were none of A, B and C selected?
+sm_selected(a_select_multiple_vector,
+            exactly  = c("A","B","C"))
+
+```
+
+
+Using this in `recode_to()` with `where = `:
+```{r}
+df %>% new_recoding(has_any_ABC_and_num_smaller_ten) %>% 
+  recode_to("yes",
+            where = sm_selected(select_multiple_letters, any = c("A", "B", "C")) & some_numbers < 10
+            )
+                    
+```
+
+
+```{r}
+df %>% new_recoding(target = severity) %>% 
+  recode_to(5,
+            where = sm_selected(select_multiple_letters, any = c("A","B","C"))) %>% 
+  end_recoding
+
+```
 
 
 
@@ -544,13 +605,12 @@ you can read this like a sentence: "take `df`, make a `new_recoding` with target
 
 df %>% new_recoding(target = severity) %>% 
   recode_to(5,
-            where = sm_selected(select_multiple_letters, any = c("A C","B"))) %>% 
+            where = sm_selected(select_multiple_letters, any = c("A","B","C"))) %>% 
   end_recoding
   
 
 ```
 
-<div style="color:red;">not implemented yet: handling skiplogic in recode_freely</div>
 
 
 TADAAA!

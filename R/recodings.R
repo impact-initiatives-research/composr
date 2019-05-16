@@ -10,7 +10,7 @@
 #'  recoding is a special case of a composition, where the source variable is defined from the start and does not change.
 #' @export
 new_recoding<-function(df, target,source = NULL){
-  source<-deparse(substitute(source))
+  source<-deparsed_string(deparse(substitute(source)))
   if(source=="NULL"){source<-NULL}
 
   if(!is.null(source)){
@@ -21,7 +21,7 @@ new_recoding<-function(df, target,source = NULL){
     }
   }
 
-  target<-deparse(substitute(target))
+  target<-deparsed_string(deparse(substitute(target)))
   target<-gsub("\'", "", target) %>% gsub("\"","", .)
 
 
@@ -80,7 +80,7 @@ recode_to<-function(.data,to,
 
 
   # recode_to is a wrapper for compose that sets the source variable:
-  source<-as.character(deparse(substitute(source)))
+  source<-deparsed_string(as.character(deparse(substitute(source))))
 
   if(source!="NULL"){
     .data <- recoding_set_source(.data,source)
@@ -91,7 +91,7 @@ recode_to<-function(.data,to,
 
 
 
-  where.string<-as.character(deparse(substitute(where)))
+  where.string<-deparsed_string(as.character(deparse(substitute(where))))
 
 
 

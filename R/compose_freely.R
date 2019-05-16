@@ -43,7 +43,7 @@ compose_freely<-function(.data,to,where.string,
   if(!is.null(questionnaire)){
 
     is_skipped<-function(var){
-      questionnaire$question_is_skipped(.data, deparse(substitute(var)))
+      questionnaire$question_is_skipped(.data, deparsed_string(deparse(substitute(var))))
     }
   }
 
@@ -87,4 +87,6 @@ compose_freely<-function(.data,to,where.string,
 }
 
 
-
+deparsed_string<-function(x){
+  paste0(as.character(x),collapse = "")
+}

@@ -4,14 +4,14 @@
 \alias{new_recoding}
 \title{Start a new recoding}
 \usage{
-new_recoding(df, source = NULL, target)
+new_recoding(df, target, source = NULL)
 }
 \arguments{
 \item{df}{the source data as a data.frame}
 
-\item{source}{the variable to recode from}
-
 \item{target}{the name of the new variable created through the recoding}
+
+\item{source}{the variable to recode from}
 }
 \value{
 the input data frame with

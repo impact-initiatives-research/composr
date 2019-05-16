@@ -2,8 +2,10 @@
 
 S3method(print,composr_composition)
 export("%>%")
+export(by_sm)
 export(compose)
 export(end_recoding)
 export(new_recoding)
 export(recode_to)
+export(sm_selected)
 importFrom(magrittr,"%>%")
