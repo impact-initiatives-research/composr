@@ -31,3 +31,14 @@ the updated composition
 \description{
 add layer to current composition
 }
+\examples{
+
+df<-data.frame(a=1:100,b=sample(letters[1:5],100,T))
+
+df \%>\% new_composition("new_variable_name") \%>\%
+compose("a",to = "less than 50" ,where.num.smaller = 50) \%>\%
+compose("a",to = "more or equal 50", where.num.larger.equal = 50)
+compose("b",to = "(size not important)",where.selected.exactly = "d") \%>\%
+end_composition()
+
+}

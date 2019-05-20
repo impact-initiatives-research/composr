@@ -63,7 +63,7 @@ In this tutorial, we will also use the `dplyr` package, because it plays nicely 
 library(dplyr)
 ```
 
-# Recoding: General structure
+# Recoding: the Basics
 
 
 ## Starting a new recoding
@@ -172,43 +172,8 @@ df %>%
 ```
 Here, first _all_ numbers smaller than 15 are set to "large" - including very small numbers. However for smaller numbers, that condition is then overwritten.
 
-## Special cases: "otherwise"", "skipped" and `NA`
-
-In addition to a condition parameter ("where..."), extra values can be supplied for various cases where the condition is not fulfilled:
-
-- `na.to = `: NAs in the source variable are set to the value supplied to this parameter
-- `skipped.to = `: values that are `NA` in the source variable because the question was skipped in the kobo questionnaire are set to the value supplied to this parameter
-- `otherwise.to = `: values that are not NA in the source variable and do not fulfill the condition are set to the value supplied to this parameter
-
-we can for example use `otherwise.to` to shortcut the example above, and add a special value for `NA`s using `na.to`:
-
-
-```{r}
-df %>%
-  
-  new_recoding(target = "number_size",
-               source = some_numbers
-               ) %>% 
-  
-  recode_to("big number",
-            where.num.larger = 10,
-            otherwise.to = "small number",
-            na.to = "COULD BE ANYTHING!") %>% 
-  
-  end_recoding()
-
-
-```
-
-using `na.to` always throws a warning. It is assumed that`NA` is real missing data, so recoding that into some values may be a flaw in the methodology.
-
-
-More details on `skipped.to` in it's own chapter further below: "Recoding Skiplogic with koboquest"
-
-
-
-
-### "where..." Conditions
+ 
+## Different types of conditions
 
 
 For simple numbers this seems a bit tedious; however there are quite a few "where..." conditions for numbers ("where.num...") and for categorical select_one or select_multiple ("where.selected") questions that come in handy:
@@ -251,7 +216,65 @@ df %>%
 ```
 
 
-### Recoding Skiplogic with koboquest
+## Changing the Source Variable
+
+It is also possible to change the source variable during recoding. The target variable stays the same:
+
+```{r}
+
+df %>% new_recoding(target = cross_var_recoding,
+                    source = select_multiple_letters
+                    ) %>%
+
+  recode_to(to = "select one of the first 15 letters in the alphabet",
+          where.selected.any = LETTERS[1:15]) %>%
+
+  recode_to(to = "ignore the selected letters! this record has num > 15!",
+          where.num.larger = 15,
+          source = some_numbers) %>% 
+  
+  end_recoding()
+
+```
+
+As above, any rows that match more than one condition will be set to the "to" parameter value, essentially ignoring any previous matches. The conditions are **not** 'added' like an "AND" operator (which would mean "set the value where _both_ conditions are fulfilled"). Instead, it always means "set the value of the _last_ condition that applies, independent from the previous conditions" 
+
+
+
+## Special cases: "otherwise"", "skipped" and `NA`
+
+In addition to a condition parameter ("where..."), extra values can be supplied for various cases where the condition is not fulfilled:
+
+- `na.to = `: NAs in the source variable are set to the value supplied to this parameter
+- `skipped.to = `: values that are `NA` in the source variable because the question was skipped in the kobo questionnaire are set to the value supplied to this parameter
+- `otherwise.to = `: values that are not NA in the source variable and do not fulfill the condition are set to the value supplied to this parameter
+
+### 'otherwise.to' and 'na.to' example
+
+we can for example use `otherwise.to` to shortcut the example above, and add a special value for `NA`s using `na.to`:
+
+
+```{r}
+df %>%
+  
+  new_recoding(target = "number_size",
+               source = some_numbers
+               ) %>% 
+  
+  recode_to("big number",
+            where.num.larger = 10,
+            otherwise.to = "small number",
+            na.to = "COULD BE ANYTHING!") %>% 
+  
+  end_recoding()
+
+
+```
+
+using `na.to` always throws a warning. It is assumed that`NA` is real missing data, so recoding that into some values may be a flaw in the methodology.
+
+
+### `skipped.to`: Recoding Skiplogic with koboquest
 
 
 In order to use `skipped.to` (recoding values that were skipped in the questionnaire), you need to be familiar with the `koboquest` package.
@@ -324,52 +347,13 @@ df %>% new_recoding(target = new_variable,
 ```
 
 
-### End the recoding
 
-As you may have noticed, the recoding tracks what conditions are applied when and how often each comes into effect (printed to the console when you print the resulting data frame.). You can get rid of that and retreive the original dataset (with the new variable added) in the end with `end_recoding()`.
-
-```{r}
-df %>% new_recoding(target = is_b, source = select_one_letters) %>% 
-  recode_to(TRUE, where.selected.exactly = "b",
-            otherwise.to = FALSE) %>% 
-  end_recoding()
-
-```
-
-
-
-
-# Changing the Source Variable
-
-It is also possible to change the source variable during recoding. The target variable stays the same:
-
-```{r}
-
-df %>% new_recoding(target = cross_var_recoding,
-                    source = select_multiple_letters
-                    ) %>%
-
-  recode_to(to = "select one of the first 15 letters in the alphabet",
-          where.selected.any = LETTERS[1:15]) %>%
-
-  recode_to(to = "ignore the selected letters! this record has num > 15!",
-          where.num.larger = 15,
-          source = some_numbers) %>% 
-  
-  end_recoding()
-
-```
-
-As above, any rows that match more than one condition will be set to the "to" parameter value, essentially ignoring any previous matches. The conditions are **not** 'added' like an "AND" operator (which would mean "set the value where _both_ conditions are fulfilled"). Instead, it always means "set the value of the _last_ condition that applies, independent from the previous conditions" 
-
-
-
-## Recoding complex conditions across source variables: "Free recoding""
+## Recoding complex conditions across source variables: generic "where" condition
 
 Apart from the quite strict (but hopefully easy to use) `recode_to()`, there is the generic "where" argument; here you need to specify an expression that evaluates to a logical (TRUE/FALSE) condition.
 Here you _only_ supply the input data, the "to" value you want to recode to and a generic `where` condition. The "where" condition can be any R code that can run inside the namespace of the input data; this means you can use data column names directly. (hopefully clear to tidyverselers, and to everyone else with the example below):
 
-
+### example 
 Let's say we want a recoding condition that says "turn all values where `select_one_letters` is in the first 12 letters of the alphabet, **AND** `some_numbers` < 15". We can specify that conditon in the simple "where" parameter as straight up R code:
 ```{r}
 
@@ -398,7 +382,7 @@ df %>%
 
 ```
 
-#### Select multiple questions
+### Select multiple questions
 
 responses to select multiple questions are stored as strings, with the different responses separated by a space; for example if someone selected "A", "B" and "C", the data will be "A B C". Therefore you can not simply say do `select_multiple_letters %in% c("A","B","C")` - this would never match. If you instead do `select_multiple_letters == "A B C"`, it would only match that exact combination in that exact order. So select multiple question are a bit more complicated.
 For this, we have an additional "helper" function that you can use inside the where condition: `sm_selected()` (short for "select_multiple" selected):
@@ -452,6 +436,62 @@ df %>% new_recoding(target = severity) %>%
 
 
 
+
+
+## "direct recoding"
+
+
+### Example
+
+instead of individual recodings with a where condition, you can use an expression that produces the "to" value directly with `recode_directly()`:
+
+
+```{r}
+
+df %>% new_recoding("somenumbers_decimals") %>% recode_directly(some_numbers - floor(some_numbers))
+
+
+
+```
+
+### direct_recoding never mixes up rows!
+
+This runs on _each row individually_. The essential difference to for example dplyr's `transform` and `mutate` is that `recode_directly` operates on each row completely independently. See the difference for example here: 
+```{r}
+# create a second random numeric variable for demonstration
+df$some_numbers2<-runif(nrow(df))
+df %>% transmute(max_num = max(some_numbers,some_numbers2,na.rm = T))
+```
+`transmute` took the maximum value between `some_numbers` and `some_numbers2` and gave back the maximum value _overall_.
+In contrast, `recode_directly` gets the larger value per record:
+```{r}
+
+df %>% new_recoding(max_num) %>% 
+  recode_directly(max(some_numbers,some_numbers2,na.rm = T))
+
+```
+
+### direct recoding supports `sm_selected` and `is_skipped` 
+
+... like the title says. Generally here you can go rouge:
+
+```{r}
+
+df %>% new_recoding(test) %>% 
+  
+  recode_directly(
+
+      if( sm_selected(select_multiple_letters, any=letters[1:10]) & !is_skipped(select_one_letters)){
+        "yes"
+        }
+      else{
+          "no"
+        }
+    
+    ,questionnaire = my_questionnaire)
+
+
+```
 
 # Making weighted Sums
 
@@ -517,47 +557,49 @@ You see here also that we can also create two variables by piping directly from 
 # Making Decision Tree
 
 Alternatively, you can use this to form "decision tree" style severity scores. Here is an example:
-```{r}
-
-edges<-matrix(c(
-            "start",
-            "select_one_letters",
-            "",
-  
-            "select_one_letters",
-            "some_numbers",
-            "A, B, C or D", 
-            
-            "select_one_letters",
-            "final score: 5", 
-            "any from D - Z", 
-            
-            "some_numbers", 
-            "final score 4",
-            " < 10",
-            
-            "some_numbers",
-            "final score 3",
-            ">= 10"),ncol = 3L,byrow = T)
-
-g<- igraph:: graph_from_edgelist((edges)[,1:2],directed = T)
-igraph::E(g)$label <- edges[,3]
-igraph::V(g)$color<-"#AAAAAA"
-igraph::V(g)$color[grepl("final",igraph::V(g)$name)]<-"#FF0000"
-
-
-g %>% plot(
-  # vertex.color = "gray",
-  vertex.frame.color=NA,
-  vertex.label.color="black",
-  edge.label.color="black",
-  vertex.label.family = "sans-serif",
-  edge.label.family = "sans-serif",
-  vertex.label.cex = 0.8,
-  edge.label.cex = 0.8,layout = igraph::layout_as_tree,edge.distance=10)
+```{r, echo = F}
+# 
+# edges<-matrix(c(
+#             "start",
+#             "select_one_letters",
+#             "",
+#   
+#             "select_one_letters",
+#             "some_numbers",
+#             "A, B, C or D", 
+#             
+#             "select_one_letters",
+#             "final score: 5", 
+#             "any from D - Z", 
+#             
+#             "some_numbers", 
+#             "final score 4",
+#             " < 10",
+#             
+#             "some_numbers",
+#             "final score 3",
+#             ">= 10"),ncol = 3L,byrow = T)
+# 
+# g<- igraph:: graph_from_edgelist((edges)[,1:2],directed = T)
+# igraph::E(g)$label <- edges[,3]
+# igraph::V(g)$color<-"#AAAAAA"
+# igraph::V(g)$color[grepl("final",igraph::V(g)$name)]<-"#FF0000"
+# 
+# 
+# g %>% plot(
+#   # vertex.color = "gray",
+#   vertex.frame.color=NA,
+#   vertex.label.color="black",
+#   edge.label.color="black",
+#   vertex.label.family = "sans-serif",
+#   edge.label.family = "sans-serif",
+#   vertex.label.cex = 0.8,
+#   edge.label.cex = 0.8,layout = igraph::layout_as_tree,edge.distance=10)
 
 
 ```
+![example_tree.png](example_tree.png) 
+
 How coud we implement this with `recode_to`?
 We need _one free recoding layer for each possible path from the starting point to each final score_.
 In this example there are three possible paths; each path needs to be recoded to a certain score:
@@ -611,17 +653,46 @@ df %>% new_recoding(target = severity) %>%
 
 ```
 
+# Why this? - extending composr
+
+The point of us using a tool like composr compared to excel is that it is easily extended. When one team needs something more complex, most other teams will too, and `composr` (and `r` in general) allow us to roll out those extensions. In a way, composr delivers the basic building blocks from which we can build more complex and more specialised functionality in a standardised way.
+
+Here is an example of how this could work. A common recoding for some made up existing numeric scores for "mortality_score", "protection_score" and "coping_mechanism_score" might be: "take the average of all scores, except if the "mortality_score" is higher than the average; then take that score directly instead".
+
+we create a new function for this, which we could then include in this package an make available to all. Here is an example code (you don't need to understand the details):
+
+```{r}
+ average_or_first_if_higher<-function(dominant_score,...){
+    
+    all_scores<-c(unlist(list(...)),dominant_score)
+    
+    average_score<-mean(all_scores,na.rm = F)
+    
+    ifelse(average_score > dominant_score,
+           average_score,
+           dominant_score)
+ }
+
+```
 
 
-TADAAA!
-
-<img src="applause.gif">
+This we could add generally to the composr package functionality: 
 
 
+```{r}
+# make some fake data:
+example_data<- data.frame(score_a = runif(50)+0.3,score_b = runif(50),score_c = runif(50))
+
+# recode with new function:
+
+example_data %>% new_recoding(average_maxed_by_score_a) %>% 
+  recode_directly(average_or_first_if_higher(score_a,score_b,score_c))
 
 
 
+```
 
 
+In the same way, we can implement more complex methodologies (possibly there will be a global decision tree model to combine scores for livig standards, vulnerability, coping mechanisms..). If you are already using the centralised system, we can make those available to you as a single "command", in extension of the `composr` package.
 
 

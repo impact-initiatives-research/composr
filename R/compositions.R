@@ -36,7 +36,7 @@ new_composition<-function(df,target){
 #' @param where.num... : a scalar number. setting values to 'to' where the 'source' is equal / smaller / smaller or equal / larger / larger or euqal than the number supplied in where.num...
 #' @param otherwise an alternative value to be used if the condition is not fulfilled, the source is not NA and not skipped
 #' @return the updated composition
-#' @expamples
+#' @examples
 #'
 #' df<-data.frame(a=1:100,b=sample(letters[1:5],100,T))
 #'
