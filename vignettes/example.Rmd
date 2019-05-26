@@ -358,7 +358,7 @@ Let's say we want a recoding condition that says "turn all values where `select_
 ```{r}
 
 df %>% new_recoding(target = free_recoded_index) %>% recode_to(to="A-G and smaller than fifteen",
-            where = c(select_one_letters %in% letters[1:7]) & some_numbers < 15) %>% end_recoding()
+            where = (select_one_letters %in% letters[1:7]) & some_numbers < 15) %>% end_recoding()
 
 ```
 
@@ -493,20 +493,60 @@ df %>% new_recoding(test) %>%
 
 ```
 
+
+# Batch Recoding
+
+if you need to do a lot of recoding & composing, you may end up with a lot of code.
+To cut things down a bit and keep an easier overview, you can use `recode_batch()` to apply a vector of generic where conditions.
+
+We start with a data.frame (for example from a csv file) with multiple `to` values, `target` variables and `where` conditions. The recode_batch function actually takes individual vectors for each argument, but they're easier to store in one data.frame
+
+
+```{r,include=F}
+
+many_recodings <- data.frame(to_values = c(1,2,3),
+                             target_variables = c("new_var1","new_var1","new_var2"),
+                             conditions = c('sm_selected(select_multiple_letters,any=c("A","B","C","D"))',
+                                            'some_numbers < 10',
+                                            'select_one_letters %in% letters[1:10]'),
+                             stringsAsFactors = F)
+
+```
+
+```{r,eval=F}
+many_recodings
+```
+```{r,eval=T,results='asis',echo=F}
+knitr::kable(many_recodings)
+```
+
+Now we can apply them all 'at once' (they are still run in sequence). Note that each argument is given a vector (extracted from the data frame):
+
+```{r}
+library(composr)
+df %>% recode_batch(tos = many_recodings$to_values,
+                    wheres = many_recodings$conditions,
+                    targets = many_recodings$target_variables) %>% 
+  end_recoding()
+
+```
+This created two variables, in line with the two different target variables specified. The first two conditions are used to recode to the first two `to` values on the target variable specified in the first two elements of the `targets`.
+
+
 # Making weighted Sums
 
 
 This whole thing works for making weighted sums. For this we will recode variables to numeric, and then use `dplyr::mutate()` to sum them up (no worries, there is almost nothing new compared to abve!) Let' say we need a weighted sum between  `select_one_letters` and `select_mutiple_letters`.
 
-- In the `select_one_letters`: 
-  - the first 10 letters weight `1`
-  - the others weight `2`
+- In the `select_one_letters`:
+    - the first 10 letters weight `1`
+    - the others weight `2`
 
 - in `select_multipe_letters`
-  - having ticked nothing weighs 0
-  - selecting any weights `1`
-  - selecting at least some from the fist 10 letters is a `2`
-  - but when "A"" was ticked, it weighs 3 regardless of the other choices. 
+    - having ticked nothing weighs 0
+    - selecting any weights `1`
+    - selecting at least some from the fist 10 letters is a `2`
+    - but when "A"" was ticked, it weighs 3 regardless of the other choices. 
 
 Here's how we do it:
 
@@ -554,7 +594,7 @@ You see here also that we can also create two variables by piping directly from 
 
 
 
-# Making Decision Tree
+# Making a Decision Tree
 
 Alternatively, you can use this to form "decision tree" style severity scores. Here is an example:
 ```{r, echo = F}

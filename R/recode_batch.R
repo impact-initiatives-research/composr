@@ -6,16 +6,21 @@
 #' @param wheres a vector of "where" conditions; R code as strings (evaluated in namespace of the data)
 #' @param targets vector of target variables to create as characters. each change triggers a new_recoding(). if left empty, recodes to taret specified in new_recoding().
 #' @param return the ongoing recoding from after the last 'where' recoding. return to regular data frame with all new recodings visible with end_recoding()
+#' @export
 recode_batch<-function(df,tos,wheres,targets = NULL, questionnaire = NULL){
 
+  # Factors are demons - exorcism:
+  if(is.factor(tos)){tos<-as.character(tos)}
+  if(is.factor(targets)){targets<-as.character(targets)}
+  if(is.factor(wheres)){wheres<-as.character(wheres)}
+
   if(!is.data.frame(df)){stop("df must be a data frame")}
-  assertthat::assert_that(is.character(tos) | is.numeric(tos))
+  assertthat::assert_that(is.atomic(tos))
   assertthat::assert_that(is.character(wheres),msg = "'wheres' must be a character vector")
   if(length(tos)!=length(wheres)){stop("'tos' and 'wheres' must have the same length")}
   if(!is.null(targets) & length(targets)!=length(wheres)){
     stop("'targets' and 'wheres' must have the same length. Each change in 'target' will trigger a new_recoding()")
     }
-
 
 
   for(i in 1:length(wheres)){
