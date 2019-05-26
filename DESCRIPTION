@@ -19,5 +19,8 @@ Imports:
     magrittr,
     tibble,
     dplyr,
-    glue
+    glue,
+    koboquest (>= 1.0.0)
 VignetteBuilder: knitr
+Remotes:  
+    mabafaba/koboquest
