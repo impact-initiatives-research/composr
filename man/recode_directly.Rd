@@ -11,8 +11,11 @@ recode_directly(.data, to_expression, questionnaire = NULL, ...)
 
 \item{to_expression}{R code as a character string; evaluated in the namespace of the input data, and result will be the 'to' value; will overwrite everything that is not NA here}
 
-\item{questionnaire}{if you supply a questionnaire, you will be able to use the following functions within condition:}
+\item{questionnaire}{if you supply a questionnaire, you will be able to use `is_skipped()` in the expression.}
 }
 \description{
 recode directly to a value
+}
+\details{
+the expression is evaluated _on each row individually_. in that world, each variable corresponds to an _individual value_. This allows you to do for example max(var1, var2) - this will return the larger value between var1 and  var2 of _each record_.
 }
