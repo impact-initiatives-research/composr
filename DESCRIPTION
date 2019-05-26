@@ -1,11 +1,11 @@
 Package: composr
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Title: Compose new variables - horizontal recoding operations
+Version: 0.1.0.9000
+Author: Martin Barner
+Maintainer: Martin Barner <martin.barner@impact-initiatives.org>
+Description: see browseVignettes("composr").
+github.com/mabafaba/composr
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
