@@ -1,7 +1,7 @@
 Package: composr
 Type: Package
 Title: Compose new variables - horizontal recoding operations
-Version: 0.1.0.9000
+Version: 0.1.1
 Author: Martin Barner
 Maintainer: Martin Barner <martin.barner@impact-initiatives.org>
 Description: see browseVignettes("composr"). github.com/mabafaba/composr
