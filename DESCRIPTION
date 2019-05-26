@@ -4,8 +4,7 @@ Title: Compose new variables - horizontal recoding operations
 Version: 0.1.0.9000
 Author: Martin Barner
 Maintainer: Martin Barner <martin.barner@impact-initiatives.org>
-Description: see browseVignettes("composr").
-github.com/mabafaba/composr
+Description: see browseVignettes("composr"). github.com/mabafaba/composr
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
