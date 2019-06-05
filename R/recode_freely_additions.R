@@ -53,7 +53,7 @@ sm_selected<-function(x,
     return(by_sm(x,selected_exactly_lgl,from=exactly))}
   if(!is.null(none)){
     stop_if_has_space(none)
-    return(by_sm(x,selected_none_lgl,from=any))}
+    return(by_sm(x,selected_none_lgl,from=none))}
 
   stop("provide exactly one of the arguments any,all,exactly or none. (2)")
 
